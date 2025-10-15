@@ -1,39 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
 
-import firebase from 'firebase/compat/app';
-import 'firebase/compat/firestore';
-import 'firebase/compat/auth';
-
+import { firebase, auth, firestore, getFcmToken, onMessage, messaging } from './firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useCollectionData } from 'react-firebase-hooks/firestore';
-
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
-
-// ✅ Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyDgHQ_ICAAN2xDcUhq_TXL_hcIOsBEXi7Q",
-  authDomain: "superchat-dbbdb.firebaseapp.com",
-  projectId: "superchat-dbbdb",
-  storageBucket: "superchat-dbbdb.firebasestorage.app",
-  messagingSenderId: "734341682831",
-  appId: "1:734341682831:web:95a56c8ba3b4df6fb942fa",
-  measurementId: "G-23T169N49P"
-};
-
-// ✅ Initialize Firebase (only once)
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
-
-const auth = firebase.auth();
-const firestore = firebase.firestore();
-
-// ✅ Use modular messaging API (linked to default app)
-const messaging = getMessaging(firebase.app());
+import { generateToken } from './firebase';
 
 function App() {
   const [user] = useAuthState(auth);
+  const [fcmToken, setFcmToken] = useState(null);
+  useEffect(() =>{
+    generateToken();
+  }, [])
 
   // ✅ Request push notification permission
   useEffect(() => {
@@ -43,15 +21,18 @@ function App() {
 
       if (permission === 'granted') {
         try {
-          const currentToken = await getToken(messaging, {
-            vapidKey: "BLnMQOT8nQ-ValDTr4N_eR8EEKpVAjJGa6EBGml4KPYdfFze7yHILOFWIRXwDuH2NVr36XGmbik7UI6jVtFRnX4" // 🔑 Replace this with your Firebase VAPID key
-          });
+          // Replace the VAPID key below with your project's public VAPID key from the
+          // Firebase console -> Project settings -> Cloud Messaging -> Web Push certificates
+          const vapidKey = "BLnMQOT8nQ-ValDTr4N_eR8EEKpVAjJGa6EBGml4KPYdfFze7yHILOFWIRXwDuH2NVr36XGmbik7UI6jVtFRnX4";
+          const currentToken = await getFcmToken(vapidKey);
 
           if (currentToken) {
             console.log("✅ FCM Token:", currentToken);
+            setFcmToken(currentToken);
             // You can send this token to Firestore to target this user later if needed
           } else {
             console.warn("⚠️ No registration token available.");
+            setFcmToken(null);
           }
         } catch (error) {
           console.error("❌ Error retrieving FCM token:", error);
@@ -79,6 +60,22 @@ function App() {
         <h1>SUPERCHAT</h1>
         <SignOut />
       </header>
+
+      {/* FCM Token UI for testing */}
+      <div style={{ padding: 12, textAlign: 'center' }}>
+        <h3>Push Notifications</h3>
+        {fcmToken ? (
+          <div>
+            <textarea readOnly value={fcmToken} style={{ width: '80%', height: 80 }} />
+            <br />
+            <button onClick={() => { navigator.clipboard.writeText(fcmToken); }}>Copy token</button>
+          </div>
+        ) : (
+          <div>
+            <p>No FCM token yet. Allow notifications and reload if needed.</p>
+          </div>
+        )}
+      </div>
 
       <section>
         {user ? <ChatRoom /> : <SignIn />}

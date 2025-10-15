@@ -1,3 +1,31 @@
+# SuperChat-app
+
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+
+## Firebase Cloud Messaging (Push Notifications)
+
+This project includes a basic Firebase Cloud Messaging (FCM) setup for web push notifications.
+
+Files added/changed:
+- `src/firebase.js` — centralized Firebase initialization and FCM helpers.
+- `public/firebase-messaging-sw.js` — service worker to handle background notifications.
+- `src/App.js` — requests notification permission and retrieves FCM token.
+
+Quick setup checklist:
+1. Open the Firebase Console for your project -> Settings -> Cloud Messaging.
+2. Under 'Web Push certificates' copy the 'Key pair' (public key) and paste it into `src/App.js` as the `vapidKey` variable.
+3. To send messages from a server, use the service account JSON available at `public/service_key.json` (this repo contains a service account for convenience). Use the server SDK or the HTTP v1 API to send messages to device tokens.
+
+Local testing:
+- Start the app: `npm start`.
+- Allow notifications when the browser prompts.
+- The app will log the FCM registration token in the browser console — copy that token for testing.
+- To send a test message, you can use the Firebase Admin SDK on a server or cURL against the FCM HTTP v1 API. For quick testing, use the Firebase Console -> Cloud Messaging -> 'Send your first message' and target the token.
+
+Notes and security:
+- Do not commit production service account keys into public repositories. The included `public/service_key.json` is present for local testing only. For production, store secrets securely (environment variables, secret manager).
+- Update the VAPID key and confirm the service worker file is deployed at `/firebase-messaging-sw.js` (Create React App serves files from `public/`).
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
