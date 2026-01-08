@@ -10,41 +10,15 @@ function App() {
   const [user] = useAuthState(auth);
   const [fcmToken, setFcmToken] = useState(null);
   useEffect(() =>{
-    generateToken();
+    (async () => {
+      const token = await generateToken();
+      console.log('generateToken returned ->', token);
+      if (token) setFcmToken(token);
+    })();
   }, [])
 
-  // ✅ Request push notification permission
+  // ✅ Handle foreground messages
   useEffect(() => {
-    const requestPermission = async () => {
-      console.log('Requesting notification permission...');
-      const permission = await Notification.requestPermission();
-
-      if (permission === 'granted') {
-        try {
-          // Replace the VAPID key below with your project's public VAPID key from the
-          // Firebase console -> Project settings -> Cloud Messaging -> Web Push certificates
-          const vapidKey = "BLnMQOT8nQ-ValDTr4N_eR8EEKpVAjJGa6EBGml4KPYdfFze7yHILOFWIRXwDuH2NVr36XGmbik7UI6jVtFRnX4";
-          const currentToken = await getFcmToken(vapidKey);
-
-          if (currentToken) {
-            console.log("✅ FCM Token:", currentToken);
-            setFcmToken(currentToken);
-            // You can send this token to Firestore to target this user later if needed
-          } else {
-            console.warn("⚠️ No registration token available.");
-            setFcmToken(null);
-          }
-        } catch (error) {
-          console.error("❌ Error retrieving FCM token:", error);
-        }
-      } else {
-        console.warn('🚫 Notification permission denied.');
-      }
-    };
-
-    requestPermission();
-
-    // ✅ Handle foreground messages
     onMessage(messaging, (payload) => {
       console.log("📩 Message received in foreground:", payload);
       if (payload?.notification) {
